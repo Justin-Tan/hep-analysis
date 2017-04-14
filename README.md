@@ -1,6 +1,10 @@
 # hep-analysis
 hep-analysis aims to reproduce the traditional data-analysis workflow in high-energy physics using Python. This allows us to employ the wide range of modern, flexible packages for machine learning and statistical analysis written in Python to increase the sensitivity of our analysis.
 
+[![solarized dualmode](https://github.com/altercation/solarized/raw/master/img/solarized-yinyang.png)](#features)
+
+![NN output](examples/plots/nn_output.pdf?raw=true "Neural Network Output")
+
 ## Functionality
 ### Machine Learning
 - [x] Deep Neural Networks - `TensorFlow`
