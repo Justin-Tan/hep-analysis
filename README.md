@@ -1,5 +1,5 @@
-# hep-ml
-hep-ml aims to reproduce the traditional data-analysis workflow in high-energy physics using Python. This allows us to employ the wide range of modern, flexible packages for machine learning and statistical analysis written in Python to increase the sensitivity of our analysis.
+# hep-analysis
+hep-analysis aims to reproduce the traditional data-analysis workflow in high-energy physics using Python. This allows us to employ the wide range of modern, flexible packages for machine learning and statistical analysis written in Python to increase the sensitivity of our analysis.
 
 ## Functionality
 ### Machine Learning
@@ -15,8 +15,8 @@ hep-ml aims to reproduce the traditional data-analysis workflow in high-energy p
 - [ ] Precision Branching Fraction / CP Asymmetry Measurements
 
 ## Installation
-#### hep-ml
-Installation instructions are shown for Ubuntu distributions running Python 3.6. `hep-ml` should be compatible with most Linux distributions/OSX. <Coming soon>
+#### hep-analysis
+Installation instructions are shown for Ubuntu distributions running Python 3.6. `hep-analysis` should be compatible with most Linux distributions/OSX. <Coming soon>
 
 #### Dependencies
 The easiest way to install the majority of the required packages is through [Anaconda](https://www.continuum.io/downloads). Download (if working remotely use `wget`) and run the installer. We recommend creating a separate environment before installing the necessary dependencies.
