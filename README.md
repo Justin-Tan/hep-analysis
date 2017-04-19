@@ -17,6 +17,9 @@ hep-analysis aims to reproduce the traditional data-analysis workflow in high-en
   - [ ] Bayesian Approach
 - [ ] Precision Branching Fraction / CP Asymmetry Measurements
 
+## Notebooks
+To view the notebooks available in this repo, visit http://nbviewer.jupyter.org/github/Justin-Tan/hep-analysis/tree/master/ and navigate to the relevant sections. 
+
 ## Installation
 #### hep-analysis
 Installation instructions are shown for Ubuntu distributions running Python 3.6. `hep-analysis` should be compatible with most Linux distributions/OSX. <Coming soon>
