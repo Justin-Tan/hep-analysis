@@ -1,8 +1,8 @@
 # hep-analysis
 hep-analysis aims to reproduce the traditional data-analysis workflow in high-energy physics using Python. This allows us to employ the wide range of modern, flexible packages for machine learning and statistical analysis written in Python to increase the sensitivity of our analysis.
 
-![Mbc distribution](examples/plots/mbc.png?raw=true "Sample feature distribution")
-![NN output](examples/plots/nn_prob.png?raw=true "Neural Network Output")
+![Mbc distribution](examples/plots/readme_plots/mbc.png?raw=true "Sample feature distribution")
+![NN output](examples/plots/readme_plots/nn_prob.png?raw=true "Neural Network Output")
 
 ## Functionality
 ### Machine Learning
