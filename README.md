@@ -57,3 +57,5 @@ make -j
 * [TensorFlow](https://www.tensorflow.org/). Open-source library for efficient development of neural networks.
 * [XGBoost](http://xgboost.readthedocs.io/en/latest/). Distributed gradient boosting classifier implementation.
 * [root_numpy](https://github.com/scikit-hep/root_numpy). Bridge between ROOT and Python.
+* [Hyperband](https://people.eecs.berkeley.edu/~kjamieson/hyperband.html?utm_content=buffera95c2&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer).
+Bandit-based approach to hyperparameter optimization.
