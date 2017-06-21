@@ -22,7 +22,7 @@ hep-analysis aims to reproduce the traditional data-analysis workflow in high-en
 - [ ] Precision Branching Fraction / CP Asymmetry Measurements
 
 ## Notebooks
-To view the notebooks available in this repo, visit http://nbviewer.jupyter.org/github/Justin-Tan/hep-analysis/tree/master/ and navigate to the relevant sections. 
+To view the notebooks available in this repo, visit http://nbviewer.jupyter.org/github/Justin-Tan/hep-analysis/tree/master/notebooks and navigate to the relevant section. 
 
 ## Getting Started
 Under development.
