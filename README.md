@@ -6,10 +6,14 @@ hep-analysis aims to reproduce the traditional data-analysis workflow in high-en
 
 ## Functionality
 ### Machine Learning
-- [x] Deep Neural Networks - `TensorFlow`
-- [x] Gradient Boosted Trees - `XGBoost`, `scikit-learn`, `LightGBM`
-- [x] Hyperparameter Optimization - `scikit-learn`
+#### Models
+- [x] Deep Neural Networks - `TensorFlow`, `PyTorch`
+- [x] Gradient Boosted Trees - `XGBoost`, `LightGBM`
+- [x] Hyperparameter Optimization - `scikit-learn`, `HyperBand`
+
+#### Training/Ensembling
 - [ ] Distributed Training
+- [ ] Smart Model Ensembles
 
 ### Statistical Analysis
 - [ ] Signal Yield Extraction
@@ -20,12 +24,21 @@ hep-analysis aims to reproduce the traditional data-analysis workflow in high-en
 ## Notebooks
 To view the notebooks available in this repo, visit http://nbviewer.jupyter.org/github/Justin-Tan/hep-analysis/tree/master/ and navigate to the relevant sections. 
 
-## Installation
-#### hep-analysis
-Installation instructions are shown for Ubuntu distributions running Python 3.6. `hep-analysis` should be compatible with most Linux distributions/OSX. <Coming soon>
+## Getting Started
+Under development.
+```
+$ git clone https://github.com/Justin-Tan/hep-analysis.git
+$ cd hep-analysis/path/to/project
+# Check command line arguments
+$ python3 main.py -h
+# Run
+$ python3 main.py <args> 
+```
 
-#### Dependencies
-The easiest way to install the majority of the required packages is through [Anaconda](https://www.continuum.io/downloads). Download (if working remotely use `wget`) and run the installer. We recommend creating a separate environment before installing the necessary dependencies.
+## Dependencies
+The easiest way to install the majority of the required packages is through an [Anaconda environment](https://www.continuum.io/downloads). Download (if working remotely use `wget`) and run the installer. We recommend creating a separate environment before installing the necessary dependencies.
+
+#### Python 3.6
 ```
 $ conda create -n hep-ml python=3.6 anaconda
 ```
@@ -37,25 +50,24 @@ Install the binaries from [here](https://root.cern.ch/downloading-root).
 ```
 $ pip install --user root_numpy
 ```
-
-#### TensorFlow
+#### TensorFlow 1.2
 [Installation instructions](https://www.tensorflow.org/install/install_sources). We recommend building from source for better performance. If GPU acceleration is required, install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) and [cuDNN](https://developer.nvidia.com/cudnn).
+
+#### PyTorch
+[Installation instructions](https://github.com/pytorch/pytorch#installation). 
+```
+# using Anaconda
+$ conda install pytorch torchvision -c soumith
+```
 
 #### XGBoost 
 Clone the repo as detailed [here](http://xgboost.readthedocs.io/en/latest/build.html)
-
-#### LightGBM
-Clone the [repo](https://github.com/Microsoft/LightGBM/wiki/Installation-Guide). MPI support optional.
-```
-git clone --recursive https://github.com/Microsoft/LightGBM ; cd LightGBM
-mkdir build ; cd build
-cmake .. 
-make -j
 ```
 
-## Relevant Projects
-* [TensorFlow](https://www.tensorflow.org/). Open-source library for efficient development of neural networks.
-* [XGBoost](http://xgboost.readthedocs.io/en/latest/). Distributed gradient boosting classifier implementation.
+## More Information
+* [TensorFlow](https://www.tensorflow.org/). Open-source deep learning framework.
+* [PyTorch](https://github.com/pytorch/pytorch) Dynamic graph construction!
+* [XGBoost](http://xgboost.readthedocs.io/en/latest/). Extreme gradient boosting classifier. Fast.
 * [root_numpy](https://github.com/scikit-hep/root_numpy). Bridge between ROOT and Python.
 * [Hyperband](https://people.eecs.berkeley.edu/~kjamieson/hyperband.html?utm_content=buffera95c2&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer).
 Bandit-based approach to hyperparameter optimization.
