@@ -62,7 +62,6 @@ $ conda install pytorch torchvision -c soumith
 
 #### XGBoost 
 Clone the repo as detailed [here](http://xgboost.readthedocs.io/en/latest/build.html)
-```
 
 ## More Information
 * [TensorFlow](https://www.tensorflow.org/). Open-source deep learning framework.
