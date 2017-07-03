@@ -8,10 +8,12 @@ hep-analysis aims to reproduce the traditional data-analysis workflow in high-en
 ### Machine Learning
 #### Models
 - [x] Deep Neural Networks - `TensorFlow`, `PyTorch`
+- [x] Recurrent Neural Networks - `TensorFlow`
 - [x] Gradient Boosted Trees - `XGBoost`, `LightGBM`
 - [x] Hyperparameter Optimization - `scikit-learn`, `HyperBand`
 
 #### Training/Ensembling
+- [x] Multi-GPU
 - [ ] Distributed Training
 - [ ] Smart Model Ensembles
 
@@ -51,10 +53,10 @@ Install the binaries from [here](https://root.cern.ch/downloading-root).
 $ pip install --user root_numpy
 ```
 #### TensorFlow 1.2
-[Installation instructions](https://www.tensorflow.org/install/install_sources). We recommend building from source for better performance. If GPU acceleration is required, install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) and [cuDNN](https://developer.nvidia.com/cudnn).
+[Installation instructions](https://www.tensorflow.org/install/install_sources). We recommend building from source for better performance. If GPU acceleration is required, install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) and [cuDNN](https://developer.nvidia.com/cudnn). Note: As of TF 1.2.0, your code must be modified for multi-gpu support. See the multi-gpu implementations for sample usage (tested on a Slurm cluster, but should be fully general).
 
 #### PyTorch
-[Installation instructions](https://github.com/pytorch/pytorch#installation). 
+[Installation instructions](https://github.com/pytorch/pytorch#installation).
 ```
 # using Anaconda
 $ conda install pytorch torchvision -c soumith
