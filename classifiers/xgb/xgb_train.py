@@ -50,21 +50,23 @@ def hp_default_config(deep):
     return hp
 
 def load_data(fname, mode, channel, test_size = 0.05):
-    # Input data as HDF5 file with labels in the last column
     from sklearn.model_selection import train_test_split
     df = pd.read_hdf(fname, 'df')
     # Split data into training, testing sets
-    df_X_train, df_X_test, df_y_train, df_y_test = train_test_split(df[df.columns[:-1]], df['labels'],
-                                                          test_size = test_size, random_state = 24601)
+    df_X_train, df_X_test, df_y_train, df_y_test = train_test_split(df.drop(['labels', 'mbc', 'deltae'], axis = 1), 
+            df['labels'], test_size = test_size, random_state=42)
 
-    dTrain = xgb.DMatrix(data = df_X_train.values, label = df_y_train.values, feature_names = df.columns[:-1])
-    dTest = xgb.DMatrix(data = df_X_test.values, label = df_y_test.values, feature_names = df.columns[:-1])
+    dTrain = xgb.DMatrix(data = df_X_train.values, label = df_y_train.values, feature_names = df_X_train.columns)
+    dTest = xgb.DMatrix(data = df_X_test.values, label = df_y_test.values, feature_names = df_X_test.columns)
+
+    print('Feature list:', df_X_train.columns)
+
     # Save to XGBoost binary file for faster loading
-    dTrain.save_binary(os.path.join('dmatrices', channel, "dTrain" + mode + channel + ".buffer"))
-    dTest.save_binary(os.path.join('dmatrices', channel, "dTest" + mode + channel + ".buffer"))
+    dTrain.save_binary(os.path.join('dmatrices', "dTrain_" + mode + channel + ".buffer"))
+    dTest.save_binary(os.path.join('dmatrices', "dTest_" + mode + channel + ".buffer"))
     # Save test dataframe
-    df_test = df_X_test.assign(labels = df_y_test.values)
-    df_test.to_hdf(os.path.join('test', channel, 'dTest' + mode + channel + '.h5'), key = 'df', mode = 'w')
+    #df_test = df_X_test.assign(labels = df_y_test.values)
+    #df_test.to_hdf(os.path.join('test', channel, 'dTest' + mode + channel + '.h5'), key = 'df', mode = 'w')
     dMatrix = dTrain, dTest
 
     return dMatrix, df_y_test
@@ -97,7 +99,7 @@ def train_hyp_config(data, hyp_params, num_boost_rounds):
     evalDict = {'auc': float(bst.attr('best_score')), 'error@0.5': bst.attr('best_msg').split('\t')[-2],
                 'best_iteration': int(bst.attr('best_iteration'))}
 
-    model_output = os.path.join('models', args.channel, args.mode + str(nTrees) + '.model')
+    model_output = os.path.join('models', args.channel+ args.mode + str(nTrees) + '.model')
     bst.save_model(model_output)
 
     return bst, evalDict
@@ -129,7 +131,7 @@ def run_hyp_config(data, hyp_params, n_iterations, rounds_per_iteration = 64):
 def save_results(results):
     # Save dictionary of results to json
     timestamp = time.strftime("%b_%d_%H:%M")
-    output = os.path.join('models', args.channel, args.mode + timestamp + '.json')
+    output = os.path.join('models', args.channel + args.mode + timestamp + '.json')
     with open(output, 'w') as f:
         json.dump(results, f)
     print('Boosting complete. Model saved to {}'.format(output))
@@ -178,7 +180,7 @@ def diagnostics(dataDMatrix, df_y_test, bst):
     plot_importances(bst)
     print('Diagnostic graphs saved to graphs/')
 
-    np.save(os.path.join('test', args.channel, 'yPred_{}_{}'.format(args.mode, args.channel, '.npy')), xgb_pred)
+    #np.save(os.path.join('test', args.channel, 'yPred_{}_{}'.format(args.mode, args.channel, '.npy')), xgb_pred)
 
 
 
