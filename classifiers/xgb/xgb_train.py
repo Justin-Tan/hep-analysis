@@ -67,12 +67,11 @@ def load_data(fname, mode, channel, test_size = 0.05):
     # Save test dataframe
     #df_test = df_X_test.assign(labels = df_y_test.values)
     #df_test.to_hdf(os.path.join('test', channel, 'dTest' + mode + channel + '.h5'), key = 'df', mode = 'w')
-    dMatrix = dTrain, dTest
 
-    return dMatrix
+    return dTrain, dTest
 
 
-def train_hyp_config(data, hyp_params, num_boost_rounds):
+def train_hyp_config(data_train, data_test, hyp_params, num_boost_rounds):
     # Returns validation metric after training configuration for allocated resources
     # Inputs: data - DMatrix tuple: (train, test)
 
@@ -83,7 +82,7 @@ def train_hyp_config(data, hyp_params, num_boost_rounds):
     # Number of boosted trees to construct
     nTrees = num_boost_rounds
     # Specify validation set to watch performance
-    dTrain, dTest = data[0], data[1]
+    dTrain, dTest = data_train, data_test
     evalList  = [(dTrain,'train'), (dTest,'eval')]
 
     print("Starting model training\n")
@@ -196,7 +195,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print('Loading dataset from: %s with test size 0.05' %(args.data_file))
-    dataDMatrix = load_data(args.data_file, args.mode, args.channel)
+    dTrain, dTest = load_data(args.data_file, args.mode, args.channel)
 
     # Get hyperparameter config
     if args.randomhp:
@@ -213,11 +212,11 @@ if __name__ == '__main__':
 
     # Start boosting
     t0 = time.time()
-    bst, results = train_hyp_config(dataDMatrix, hyp_params = hp, num_boost_rounds = num_boost_rounds)
+    bst, results = train_hyp_config(dTrain, dTest, hyp_params = hp, num_boost_rounds = num_boost_rounds)
     save_results(results)
 
     # Generate diagnostic summary
     if args.diagnostics:
         import matplotlib.pyplot as plt
         import seaborn as sns
-        diagnostics(dataDMatrix, bst)
+        diagnostics(dTest, bst)
