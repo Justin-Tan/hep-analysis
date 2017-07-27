@@ -7,7 +7,6 @@ import pandas as pd
 import xgboost as xgb
 import sys, time, os, json
 import argparse
-import matplotlib.pyplot as plt, seaborn
 
 from hyperopt import hp
 import hyperopt.pyll.stochastic
@@ -59,7 +58,8 @@ def load_data(fname, mode, channel, test_size = 0.05):
     dTrain = xgb.DMatrix(data = df_X_train.values, label = df_y_train.values, feature_names = df_X_train.columns)
     dTest = xgb.DMatrix(data = df_X_test.values, label = df_y_test.values, feature_names = df_X_test.columns)
 
-    print('Feature list:', df_X_train.columns)
+    print('# Features: {} | # Train Samples: {} | # Test Samples: {}'.format(dTrain.num_col(),
+     dTrain.num_row(), dTest.num_row()))
 
     # Save to XGBoost binary file for faster loading
     dTrain.save_binary(os.path.join('dmatrices', "dTrain_" + mode + channel + ".buffer"))
@@ -217,6 +217,8 @@ if __name__ == '__main__':
 
     # Generate diagnostic summary
     if args.diagnostics:
+        import matplotlib as mpl
+        mpl.use('Agg')
         import matplotlib.pyplot as plt
         import seaborn as sns
         diagnostics(dTest, bst)
