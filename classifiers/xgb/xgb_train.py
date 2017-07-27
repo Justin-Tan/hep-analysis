@@ -53,7 +53,7 @@ def load_data(fname, mode, channel, test_size = 0.05):
     from sklearn.model_selection import train_test_split
     df = pd.read_hdf(fname, 'df')
     # Split data into training, testing sets
-    df_X_train, df_X_test, df_y_train, df_y_test = train_test_split(df.drop(['labels', 'mbc', 'deltae'], axis = 1), 
+    df_X_train, df_X_test, df_y_train, df_y_test = train_test_split(df.drop(['labels', 'mbc', 'deltae'], axis = 1),
             df['labels'], test_size = test_size, random_state=42)
 
     dTrain = xgb.DMatrix(data = df_X_train.values, label = df_y_train.values, feature_names = df_X_train.columns)
@@ -140,7 +140,7 @@ def plot_importances(bst):
     importances = bst.get_fscore()
     df_importance = pd.DataFrame({'Importance': list(importances.values()), 'Feature': list(importances.keys())})
     df_importance.sort_values(by = 'Importance', inplace = True)
-    df_importance[-20:].plot(kind = 'barh', x = 'Feature', color = 'orange', figsize = (15,15), 
+    df_importance[-20:].plot(kind = 'barh', x = 'Feature', color = 'orange', figsize = (15,15),
                                      title = 'Feature Importances')
     plt.savefig(os.path.join('graphs', args.channel + args.mode + 'xgb_importances.pdf'), format='pdf', dpi=1000)
 
@@ -173,9 +173,9 @@ def diagnostics(dataDMatrix, df_y_test, bst):
     y_true = df_y_test.values
 
     test_accuracy = np.equal(y_pred, y_true).mean()
-    print('Test accuracy: {}'.format(test_accuracy)) 
+    print('Test accuracy: {}'.format(test_accuracy))
 
-    plot_ROC_curve(y_true = df_y_test.values, y_pred = xgb_pred, 
+    plot_ROC_curve(y_true = df_y_test.values, y_pred = xgb_pred,
             meta = 'xgb: {} - {} | eta: {}, depth: {}'.format(args.channel, args.mode, hp['eta'], hp['max_depth']))
     plot_importances(bst)
     print('Diagnostic graphs saved to graphs/')
@@ -206,7 +206,7 @@ if __name__ == '__main__':
         print('Using default hp config')
         hp = hp_default_config(args.deeptrees)
 
-    num_boost_rounds = 512 
+    num_boost_rounds = 512
     if args.num_boost_rounds:
         num_boost_rounds = args.num_boost_rounds
     print('Boosting for {} iterations'.format(num_boost_rounds))
