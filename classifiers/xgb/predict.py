@@ -6,6 +6,8 @@ import pandas as pd
 import xgboost as xgb
 import sys, time, os, json
 import argparse
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def plot_ROC_curve(y_true, y_pred, meta = ''):
     from sklearn.metrics import roc_curve, auc
@@ -43,7 +45,8 @@ def load_test_data(fname, mode, channel):
     # Split data into training, testing sets
     df_X_test = df.drop(['labels', 'mbc', 'deltae'], axis = 1)
     df_y_test = df['labels']
-    dTest = xgb.DMatrix(data = df_X_test.values, label = df_y_test.values, feature_names = df_X_test.columns)
+    dTest = xgb.DMatrix(data = df_X_test.values, label = df_y_test.values.astype(int),
+    feature_names = df_X_test.columns)
 
     # Save to XGBoost binary file for faster loading
     binary_path = os.path.join('dmatrices', "dVal" + mode + channel + ".buffer")
@@ -51,16 +54,17 @@ def load_test_data(fname, mode, channel):
 
     return dTest, binary_path
 
-def diagnostics(dTest, df_y_test, bst):
+def diagnostics(dTest, bst):
     xgb_pred = bst.predict(dTest)
     y_pred = np.greater(xgb_pred, 0.5)
-    y_true = df_y_test.values
+    y_true = dTest.get_label()
+    #y_true = df_y_test.values
 
     test_accuracy = np.equal(y_pred, y_true).mean()
     print('Test accuracy: {}'.format(test_accuracy))
 
-    plot_ROC_curve(y_true = df_y_test.values, y_pred = xgb_pred,
-            meta = 'xgb: {} - {} | eta: {}, depth: {}'.format(args.channel, args.mode, hp['eta'], hp['max_depth']))
+    plot_ROC_curve(y_true = y_true, y_pred = xgb_pred,
+            meta = 'xgb: {} - {} | eta: {}, depth: {}'.format(args.channel, args.mode, 0.1, 6))#, hp['eta'], hp['max_depth']))
     plot_importances(bst)
     print('Diagnostic graphs saved to graphs/')
 
@@ -75,10 +79,10 @@ if __name__ == '__main__':
     # Load saved data
     print('Loading validation set from: {}'.format(args.data_file))
     dVal, binary_path = load_test_data(args.data_file, args.mode, args.channel)
-    valDMatrix = xgb.Dmatrix(binary_path)
+    valDMatrix = xgb.DMatrix(binary_path)
 
     # Load saved model, make predictions
     print('Using saved model {}'.format(args.model))
     bst = xgb.Booster({'nthread':16})
-    bst.load_model(args.xgb_model)
-    diagnostics(dataDMatrix, df_y_test, bst)
+    bst.load_model(args.model)
+    diagnostics(valDMatrix, bst)

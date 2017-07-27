@@ -69,7 +69,7 @@ def load_data(fname, mode, channel, test_size = 0.05):
     #df_test.to_hdf(os.path.join('test', channel, 'dTest' + mode + channel + '.h5'), key = 'df', mode = 'w')
     dMatrix = dTrain, dTest
 
-    return dMatrix, df_y_test
+    return dMatrix
 
 
 def train_hyp_config(data, hyp_params, num_boost_rounds):
@@ -166,17 +166,17 @@ def plot_ROC_curve(y_true, y_pred, meta = ''):
     plt.savefig(os.path.join('graphs', args.channel + args.mode + 'ROC.pdf'), format='pdf', dpi=1000)
     plt.gcf().clear()
 
-def diagnostics(dataDMatrix, df_y_test, bst):
-    dTest = dataDMatrix[1]
+def diagnostics(dTest, bst):
     xgb_pred = bst.predict(dTest)
     y_pred = np.greater(xgb_pred, 0.5)
-    y_true = df_y_test.values
+    y_true = dTest.get_label()
+    #y_true = df_y_test.values
 
     test_accuracy = np.equal(y_pred, y_true).mean()
     print('Test accuracy: {}'.format(test_accuracy))
 
-    plot_ROC_curve(y_true = df_y_test.values, y_pred = xgb_pred,
-            meta = 'xgb: {} - {} | eta: {}, depth: {}'.format(args.channel, args.mode, hp['eta'], hp['max_depth']))
+    plot_ROC_curve(y_true = y_true, y_pred = xgb_pred,
+            meta = 'xgb: {} - {} | eta: {}, depth: {}'.format(args.channel, args.mode, 0.1, 6))#, hp['eta'], hp['max_depth']))
     plot_importances(bst)
     print('Diagnostic graphs saved to graphs/')
 
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print('Loading dataset from: %s with test size 0.05' %(args.data_file))
-    dataDMatrix, df_y_test = load_data(args.data_file, args.mode, args.channel)
+    dataDMatrix = load_data(args.data_file, args.mode, args.channel)
 
     # Get hyperparameter config
     if args.randomhp:
@@ -218,4 +218,6 @@ if __name__ == '__main__':
 
     # Generate diagnostic summary
     if args.diagnostics:
-        diagnostics(dataDMatrix, df_y_test, bst)
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        diagnostics(dataDMatrix, bst)
