@@ -40,8 +40,8 @@ def plot_importances(bst):
                                      title = 'Feature Importances')
     plt.savefig(os.path.join('graphs', 'val_{}_{}'.format(args.channel, args.mode) + 'xgb_rankings.pdf'), format='pdf', dpi=1000)
 
-def load_test_data(fname, mode, channel):
-    df = pd.read_hdf(fname, 'df')
+def load_test_data(val_fname, mode, channel):
+    df = pd.read_hdf(val_fname, 'df')
     # Split data into training, testing sets
     df_X_test = df.drop(['labels', 'mbc', 'deltae'], axis = 1)
     df_y_test = df['labels']
@@ -52,7 +52,43 @@ def load_test_data(fname, mode, channel):
     binary_path = os.path.join('dmatrices', "dVal" + mode + channel + ".buffer")
     dTest.save_binary(binary_path)
 
-    return dTest, binary_path
+    return df, dTest, binary_path
+
+def truncate_tails(hist, nsigma = 5):
+    # Removes feature outliers above nsigma stddevs away from mean
+    hist = hist[hist > np.mean(hist)-nsigma*np.std(hist)]
+    hist = hist[hist < np.mean(hist)+nsigma*np.std(hist)]
+    return hist
+
+def plot_fit_variables(df_sig, nbins = 50, columns=None):
+    # Accepts events classified as signal, and plots key fit distributions
+    # and correlations between them
+    sea_green = '#54ff9f'
+    steel_blue = '#4e6bbd'
+
+    for variable in columns:
+        d_sig = truncate_tails(data_sig[variable].values,5)
+        d_bkg = truncate_tails(data_bkg[variable].values,5)
+
+        sns.distplot(d_sig,color = sea_green, hist=True, kde = False, norm_hist = True, label = r'$\mathrm{Signal}$',bins=nbins)
+        sns.distplot(d_bkg,color = steel_blue, hist=True,label = r'$\mathrm{Background}$',kde=False,norm_hist=True,bins=nbins)
+
+#         sns.kdeplot(data_array_bkg, color = steel_blue, label = 'Background',shade =True)
+#         sns.kdeplot(d_cfd, color = crimson_tide, label = 'Crossfeed',shade =True)
+#         sns.kdeplot(d_gen, color = yellow, label = 'Generic',shade =True)
+
+        plt.title(variable)
+        plt.autoscale(enable=True, axis='x', tight=False)
+        plt.xlabel(variable)
+        plt.ylabel(r'$\mathrm{Normalized \; events/bin}$')
+        plt.legend(loc = "best")
+        #plt.title(r"$\mathrm{"+variable+"{\; - \; (B \rightarrow K^+ \pi^0) \gamma$")
+        #plt.xlim(-1.0,0.98)
+        #plt.ylim(0,3.3)
+        #plt.xlabel(r'$|(p_B)_{CMS}| \; [GeV/c]$')
+        plt.savefig('graphs/' + mode + variable + '.pdf', bbox_inches='tight',format='pdf', dpi=1000)
+        plt.show()
+        plt.gcf().clear()
 
 def diagnostics(dTest, bst):
     xgb_pred = bst.predict(dTest)
@@ -68,6 +104,8 @@ def diagnostics(dTest, bst):
     plot_importances(bst)
     print('Diagnostic graphs saved to graphs/')
 
+    return y_pred
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file', help = 'Path to dataset in HDF5 format')
@@ -78,7 +116,7 @@ if __name__ == '__main__':
 
     # Load saved data
     print('Loading validation set from: {}'.format(args.data_file))
-    dVal, binary_path = load_test_data(args.data_file, args.mode, args.channel)
+    df_val, dVal, binary_path = load_test_data(args.data_file, args.mode, args.channel)
     valDMatrix = xgb.DMatrix(binary_path)
 
     # Load saved model, make predictions
