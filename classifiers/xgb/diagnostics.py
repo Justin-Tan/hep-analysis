@@ -1,9 +1,13 @@
 import numpy as np
 import pandas as pd
 import sys, time, os, json
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+plt.ioff()
 import seaborn as sns
 import xgboost as xgb
+import argparse
 
 def plot_ROC_curve(y_true, y_pred, meta = ''):
     from sklearn.metrics import roc_curve, auc
@@ -25,7 +29,7 @@ def plot_ROC_curve(y_true, y_pred, meta = ''):
     plt.xlabel(r'False Positive Rate')
     plt.ylabel(r'True Positive Rate')
     plt.legend(loc="lower right")
-    plt.savefig(os.path.join('val_{}_{}'.format(args.channel, args.mode) + 'ROC.pdf'), format='pdf', dpi=1000)
+    plt.savefig(os.path.join('graphs', 'val_{}_{}'.format(args.channel, args.mode) + 'ROC.pdf'), format='pdf', dpi=1000)
     plt.show()
     plt.gcf().clear()
 
@@ -72,7 +76,8 @@ def plot_fit_variables(df_fit, nbins = 42, kde = True):
         #plt.xlim(-1.0,0.98)
         #plt.ylim(0,3.3)
         #plt.xlabel(r'$|(p_B)_{CMS}| \; [GeV/c]$')
-        plt.savefig(args.channel + args.mode + variable + '.pdf', bbox_inches='tight',format='pdf', dpi=1000)
+        plt.savefig(os.path.join('graphs', args.channel + args.mode + variable + '.pdf'),
+                bbox_inches='tight',format='pdf', dpi=1000)
 
 def diagnostics(dTest, bst):
     xgb_pred = bst.predict(dTest)
@@ -87,7 +92,7 @@ def diagnostics(dTest, bst):
             meta = 'xgb: {} - {} | eta: {}, depth: {}'.format(args.channel, args.mode, 0.1, 6))#, hp['eta'], hp['max_depth']))
     print('Diagnostic graphs saved to graphs/')
 
-    return y_pred
+    return y_pred, xgb_pred
 
 def plot_pairgrid(df_fit):
     def hexbin(x, y, color, max_series=None, min_series=None, **kwargs):
@@ -148,12 +153,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print('Loading validation set from: {}'.format(args.data_file))
-    df_val, dVal, _ = load_test_data('args.data_file', 'args.channel', 'args.mode')
+    df_val, dVal, _ = load_test_data(args.data_file, args.channel, args.mode)
 
     print('Using saved model {}'.format(args.model))
     bst = xgb.Booster({'nthread':16})
-    bst.load_model('args.model')
-    y_pred, xgb_pred = diagnostics(dVal1, bst)
+    bst.load_model(args.model)
+    y_pred, xgb_pred = diagnostics(dVal, bst)
     df_sig = df_val.loc[y_pred]
 
     from scipy.special import logit
@@ -165,5 +170,5 @@ if __name__ == '__main__':
     plot_pairgrid(df_fit)
     plot_fit_variables(df_fit)
     hexplot2D(df_sig['mbc'], df_sig['deltae'], 'Mbc', '\Delta E', xlim = limits['mbc'], ylim = limits['deltae'])
-    hexplot2D(df_fit['mbc'], df_fit['logit_scores'], 'Mbc', 'Logit(scores)', xlim = limits['mbc'], ylim = limits['scores'])
+    hexplot2D(df_fit['mbc'], df_fit['logit-scores'], 'Mbc', 'Logit(scores)', xlim = limits['mbc'], ylim = limits['scores'])
     hexplot2D(df_fit['deltae'], df_fit['logit-scores'], 'Mbc', 'Logit(scores)', xlim = limits['deltae'], ylim = limits['scores'])

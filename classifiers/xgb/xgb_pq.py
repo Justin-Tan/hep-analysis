@@ -7,10 +7,16 @@ import pandas as pd
 import xgboost as xgb
 import sys, time, os, json
 import argparse
+import pyarrow.parquet as pq
 
 from hyperopt import hp
 import hyperopt.pyll.stochastic
 from pprint import pprint
+
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def xgb_hyp():
     gbtree_hyp = {
@@ -48,30 +54,44 @@ def hp_default_config(deep):
 
     return hp
 
-def load_data(fname, mode, channel, test_size = 0.05):
-    from sklearn.model_selection import train_test_split
-    df = pd.read_hdf(fname, 'df')
-    # Split data into training, testing sets
-    df_X_train, df_X_test, df_y_train, df_y_test = train_test_split(df.drop(['labels', 'mbc', 'deltae'], axis = 1),
-            df['labels'], test_size = test_size, random_state=42)
 
-    dTrain = xgb.DMatrix(data = df_X_train.values, label = df_y_train.values, feature_names = df_X_train.columns)
-    dTest = xgb.DMatrix(data = df_X_test.values, label = df_y_test.values, feature_names = df_X_test.columns)
+def balanced_sample(df, uspl=True, seed=42):
+    features_l = [df[df['labels']==l].copy() for l in list(set(df['labels'].values))]
+    lsz = [f.shape[0] for f in features_l]
+    return pd.concat([f.sample(n = (min(lsz) if uspl else max(lsz)), replace = (not uspl)).copy() for f in features_l], axis=0 ).sample(frac=1, random_state=seed) 
+
+def load_data(datasetName, ident, test_size=0.05, parquet=False, balance=False):
+    
+    """
+    Read dataset as parquet or HDF5 format, splits into train, test sets
+    """
+    from sklearn.model_selection import train_test_split
+    excludeFeatures = ['labels', 'mbc', 'deltae', 'nCands', 'evtNum', 'MCtype', 'channel']
+    if parquet:
+        dataset = pq.ParquetDataset(datasetName)
+        pdf = dataset.read(nthreads=4).to_pandas()
+        pdf = balanced_sample(pdf) if balance else pdf.sample(frac=1)
+    else:
+        pdf = pd.read_hdf(datasetName, key='df')
+
+    # Split data into training, testing sets
+    df_X_train, df_X_test, df_y_train, df_y_test = train_test_split(pdf.drop(excludeFeatures, axis = 1), pdf['labels'], test_size = test_size, random_state=42)
+
+    dTrain = xgb.DMatrix(data = df_X_train, label = df_y_train, feature_names=df_X_train.columns.tolist())
+    dTest = xgb.DMatrix(data = df_X_test, label = df_y_test, feature_names=df_X_train.columns.tolist())
+    print('fNames: {}'.format(dTrain.feature_names))
 
     print('# Features: {} | # Train Samples: {} | # Test Samples: {}'.format(dTrain.num_col(),
      dTrain.num_row(), dTest.num_row()))
 
     # Save to XGBoost binary file for faster loading
-    dTrain.save_binary(os.path.join('dmatrices', "dTrain_" + mode + channel + ".buffer"))
-    dTest.save_binary(os.path.join('dmatrices', "dTest_" + mode + channel + ".buffer"))
-    # Save test dataframe
-    #df_test = df_X_test.assign(labels = df_y_test.values)
-    #df_test.to_hdf(os.path.join('test', channel, 'dTest' + mode + channel + '.h5'), key = 'df', mode = 'w')
+    dTrain.save_binary(os.path.join('dmatrices', "dTrain_{}.buffer".format(ident)))
+    dTest.save_binary(os.path.join('dmatrices', "dTest_{}.buffer".format(ident)))
 
     return dTrain, dTest
 
 
-def train_hyp_config(data_train, data_test, hyp_params, num_boost_rounds):
+def train_hyp_config(data_train, data_test, hyp_params, num_boost_rounds, identifier):
     # Returns validation metric after training configuration for allocated resources
     # Inputs: data - DMatrix tuple: (train, test)
 
@@ -98,7 +118,7 @@ def train_hyp_config(data_train, data_test, hyp_params, num_boost_rounds):
     evalDict = {'auc': float(bst.attr('best_score')), 'error@0.5': bst.attr('best_msg').split('\t')[-2],
                 'best_iteration': int(bst.attr('best_iteration'))}
 
-    model_output = os.path.join('models', args.channel+ args.mode + str(nTrees) + '.model')
+    model_output = os.path.join('models', '{}.model'.format(identifier))
     bst.save_model(model_output)
 
     return bst, evalDict
@@ -130,7 +150,7 @@ def run_hyp_config(data, hyp_params, n_iterations, rounds_per_iteration = 64):
 def save_results(results):
     # Save dictionary of results to json
     timestamp = time.strftime("%b_%d_%H:%M")
-    output = os.path.join('models', args.channel + args.mode + timestamp + '.json')
+    output = os.path.join('models', args.id + timestamp + '.json')
     with open(output, 'w') as f:
         json.dump(results, f)
     print('Boosting complete. Model saved to {}'.format(output))
@@ -141,7 +161,7 @@ def plot_importances(bst):
     df_importance.sort_values(by = 'Importance', inplace = True)
     df_importance[-20:].plot(kind = 'barh', x = 'Feature', color = 'orange', figsize = (15,15),
                                      title = 'Feature Importances')
-    plt.savefig(os.path.join('graphs', args.channel + args.mode + 'xgb_importances.pdf'), format='pdf', dpi=1000)
+    plt.savefig(os.path.join('graphs', args.id + 'xgb_importances.pdf'), format='pdf', dpi=1000)
 
 def plot_ROC_curve(y_true, y_pred, meta = ''):
     from sklearn.metrics import roc_curve, auc
@@ -162,10 +182,10 @@ def plot_ROC_curve(y_true, y_pred, meta = ''):
     plt.xlabel(r'$\mathrm{False \;Positive \;Rate}$')
     plt.ylabel(r'$\mathrm{True \;Positive \;Rate}$')
     plt.legend(loc="lower right")
-    plt.savefig(os.path.join('graphs', args.channel + args.mode + 'ROC.pdf'), format='pdf', dpi=1000)
+    plt.savefig(os.path.join('graphs', 'pi0veto_ROC.pdf'), format='pdf', dpi=1000)
     plt.gcf().clear()
 
-def diagnostics(dTest, bst):
+def diagnostics(dTest, bst, hp, identifier):
     xgb_pred = bst.predict(dTest)
     y_pred = np.greater(xgb_pred, 0.5)
     y_true = dTest.get_label()
@@ -175,27 +195,24 @@ def diagnostics(dTest, bst):
     print('Test accuracy: {}'.format(test_accuracy))
 
     plot_ROC_curve(y_true = y_true, y_pred = xgb_pred,
-            meta = 'xgb: {} - {} | eta: {}, depth: {}'.format(args.channel, args.mode, 0.1, 6))#, hp['eta'], hp['max_depth']))
-    plot_importances(bst)
+            meta = r'xgb: {} - $\eta$: {}, depth: {}'.format(identifier, hp['eta'], hp['max_depth']))
+    #plot_importances(bst)
     print('Diagnostic graphs saved to graphs/')
-
-    #np.save(os.path.join('test', args.channel, 'yPred_{}_{}'.format(args.mode, args.channel, '.npy')), xgb_pred)
-
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file', help = 'Path to training dataset')
-    parser.add_argument('channel', help = 'Decay channel')
-    parser.add_argument('mode', help = 'Background type')
+    parser.add_argument('id', help = 'Decay identifier')
     parser.add_argument('-n', '--num_boost_rounds', type = int,  help = 'Number of boosting rounds')
     parser.add_argument('-r', '--randomhp', help = 'Use random hyperparameters', action = 'store_true')
     parser.add_argument('-deep', '--deeptrees', help = 'Deeper tree config', action = 'store_true')
     parser.add_argument('-diag', '--diagnostics', help = 'Save diagnostics to file', action = 'store_true')
+    parser.add_argument('-bal', '--balanced', help = 'Use scale_pos_weight over dataset', action = 'store_true')
     args = parser.parse_args()
 
     print('Loading dataset from: %s with test size 0.05' %(args.data_file))
-    dTrain, dTest = load_data(args.data_file, args.mode, args.channel)
+    dTrain, dTest = load_data(args.data_file, args.id, parquet=False)
 
     # Get hyperparameter config
     if args.randomhp:
@@ -205,20 +222,21 @@ if __name__ == '__main__':
         print('Using default hp config')
         hp = hp_default_config(args.deeptrees)
 
-    num_boost_rounds = 512
+    if args.balanced:
+        num_T = dTrain.num_row()*dTrain.get_label().mean()
+        hp['scale_pos_weight'] = (dTrain.num_row()-num_T)/num_T
+        print('Balancing classes: F/T ratio: {}'.format(hp['scale_pos_weight']))
+    num_boost_rounds=612
     if args.num_boost_rounds:
-        num_boost_rounds = args.num_boost_rounds
-    print('Boosting for {} iterations'.format(num_boost_rounds))
+        num_boost_rounds=args.num_boost_rounds
 
     # Start boosting
     t0 = time.time()
-    bst, results = train_hyp_config(dTrain, dTest, hyp_params = hp, num_boost_rounds = num_boost_rounds)
+    print('Boosting for {} iterations'.format(num_boost_rounds))
+    bst, results = train_hyp_config(dTrain, dTest, hyp_params = hp, num_boost_rounds = num_boost_rounds, identifier = args.id)
     save_results(results)
 
     # Generate diagnostic summary
     if args.diagnostics:
-        import matplotlib as mpl
-        mpl.use('Agg')
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        diagnostics(dTest, bst)
+        diagnostics(dTest, bst, hp, args.id)
+
